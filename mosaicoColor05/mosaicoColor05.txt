@@ -1,0 +1,14 @@
+ ** A Processing sketch, to create continuous mosaics of color images **
+
+* The goal is that when you click on an image of the mosaic, it is enlarged and a new mosaic is created with all the images.
+
+* Instructions:
+  - Left click = it changes image
+  - Mouse wheel = zoom + zoom-
+  - Click and drag = when zoomed it pans the image
+  - Right click = if zoomed it resets the image to the center
+  - z = it takes a photo of the webcam (if there is webcam)
+
+* Bugs:
+  - When the image has been zoomed and/or panned the coordenate mouseX and mouseY does not correspond to the tile (cell) clicked.
+  - If you click on the black margins, it stops working. 

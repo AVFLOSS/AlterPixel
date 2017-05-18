@@ -9,7 +9,6 @@ class Imagen {
   int g;
   int b;
   
-  
   //CONSTRUCTOR
   Imagen(String tempFilename) {
     filename = tempFilename;

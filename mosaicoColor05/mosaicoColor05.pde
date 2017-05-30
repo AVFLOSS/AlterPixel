@@ -58,10 +58,8 @@ int clickedImgW, clickedImgH;
 String clickedImgPath;
 boolean animatingStatus = false;
 
-// The x and y positions to center the image
+// The x and y positions calculate offsets if any (mainly vertical photos)
 int posX, posY = 0;
-// The x and y positions for the animation
-int aniPosX, aniPosY = 0;
 
 int w, h;
 File[] files;
@@ -119,23 +117,25 @@ void draw() {
   image(mosaicImg, centerX, centerY, imgW, imgH);
 
   if (animatingStatus) {
-    aniPositionImg(clickedImg); // We get the final x and y positions for the animation
-    imageMode(CORNER);
     image(clickedImg, clickedImgX, clickedImgY, clickedImgW, clickedImgH);// old ok
-    imageMode(CENTER);
 
     // We animate the image to its final position
-    if (clickedImgX > aniPosX)  clickedImgX -= Math.sqrt(clickedImgX-aniPosX) ;
-    if (clickedImgY > aniPosY) clickedImgY -= Math.sqrt(clickedImgY-aniPosY) ;
+    if (clickedImgX > width/2)  clickedImgX -= Math.sqrt(clickedImgX-(width/2) );
+    if (clickedImgY > height/2) clickedImgY -= Math.sqrt(clickedImgY-(height/2) );
+    
+    if (clickedImgX < width/2)  clickedImgX += Math.sqrt(clickedImgX+(width/2) );
+    if (clickedImgY < height/2) clickedImgY += Math.sqrt(clickedImgY+(height/2) );
+    
 
     // We animate the image to its real size
     if (clickedImg.width > clickedImgW)  clickedImgW += Math.sqrt(clickedImg.width - clickedImgW);
     if (clickedImg.height > clickedImgH)  clickedImgH += Math.sqrt(clickedImg.height - clickedImgH);
 
     // if image is positioned and fully resized
-    if (clickedImgX == aniPosX && clickedImgY ==aniPosY && clickedImgW == clickedImg.width
+    if (clickedImgX == width/2 && clickedImgY == height/2 && clickedImgW == clickedImg.width
       && clickedImgH == clickedImg.height) {
       println("Animation finished");
+      coordenadasList.clear();  // Empty the ccoordenadasList
       run(clickedImgPath);
     }
   }
@@ -172,7 +172,6 @@ void mouseClicked() {
         break;
       }
     }
-    coordenadasList.clear();  // Empty the ccoordenadasList
     long endCliking = System.currentTimeMillis();
     println("Clicking: " + (endCliking - startCliking) );
   }
@@ -304,15 +303,10 @@ void loadNewImage() {
 } // ENDS loadNewImage()
 
 
-// Function to get the position x and y to center the image with respect to the size of the sketch
+// Function to get the position of the image to add them to the coords when ckicking the mosaic 
 void positionImg(PImage photoTmp) {
   posX = (width-photoTmp.width)/2;
   posY = (height-photoTmp.height)/2;
-}
-// Function to get the position x and y to center the image during the animation 
-void aniPositionImg(PImage photoTmp) {
-  aniPosX = (width-photoTmp.width)/2;
-  aniPosY = (height-photoTmp.height)/2;
 }
 
 

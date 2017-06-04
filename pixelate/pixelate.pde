@@ -1,4 +1,4 @@
-// Version 0.5 Beta //<>//
+// Version 0.7 Beta //<>// //<>// //<>// //<>// //<>//
 // Based in Obamathon
 // https://github.com/ITPNYU/Obamathon
 // YouTube video tutorial: https://youtu.be/nnlAH1zDBDE
@@ -6,6 +6,7 @@
 // Zoom and pan from https://github.com/jinlong25/ProcessingMapZoomPan 
 
 import processing.video.*;
+import controlP5.*;
 
 // USER OPTIONS
 // USER option: First photo to load
@@ -26,7 +27,7 @@ int surfaceH = 480;
 String photosDir = "photos";
 
 // User option: Size of the cells
-int scl = 14;
+int scl = 16;
 
 /* ****
  * There are no more user options below, but cheer ...
@@ -51,6 +52,7 @@ String lastImagePath; //The path of the image from the webcam
 //COLOR
 int pixelsLength;
 ArrayList<Coordenada> coordenadasList; // 
+ArrayList<Coordenada> coordenadasListCopy; // 
 
 PImage clickedImg;
 int clickedImgX, clickedImgY;
@@ -64,10 +66,23 @@ int posX, posY = 0;
 int w, h;
 File[] files;
 
+/**
+ ** Text field
+ **/
+ControlP5 cp5;
+boolean textfieldShow = false;
+String lastImageName;
+String lastEmail;
+Textlabel emailLabel;
+Textlabel msgLabel;
+Label labelMsg;
+boolean imagesProcessed = false;
+boolean sendingMail = false;
+
+
 /***
  ** ZOOM & PAN vars
  **/
-ArrayList<PasoHistory> historyList;
 int originalW;
 int originalH;
 int clickedMouseX;
@@ -82,8 +97,8 @@ int centerY;
 
 //Define the zoom vars
 int scale = 1;
-int maxScale = 10;
-float zoomFactor = 0.2;
+int maxScale = 5;
+float zoomFactor = 0.3;
 
 //Define the pan vars
 int panFromX;
@@ -96,105 +111,123 @@ int xShift = 0;
 int yShift = 0;
 
 void settings() {
-  size(surfaceW, surfaceH);
+  size(surfaceW, surfaceH, P2D);
 }
 void setup() {
   frameRate(fps);
+  //Check to see if there is a webcam
   cameras = Capture.list();
   if (cameras.length != 0) {
     cam = new Capture(this, camW, camH, fps);
     cam.start();
   }
-  historyList = new ArrayList<PasoHistory>();
   coordenadasList = new ArrayList<Coordenada>();
-  processAllImages();
-  run(firstPhoto);
+  setTextField();  //in functions
+  thread("processAllImages");
 } // ENDS setup()
 
-void draw() {
+//https://forum.processing.org/two/discussion/19731/#Comment_83034
+synchronized void draw() {
   background(0);
-  imageMode(CENTER);
-  image(mosaicImg, centerX, centerY, imgW, imgH);
+  if (!imagesProcessed) {
+    textSize(50);
+    fill(255);
+    text("Loading...", width/2 - textWidth("Loading...")/2, height/2 - 25);
+  } else if(sendingMail){
+    textSize(50);
+    fill(255);
+    text("Enviando mail...", width/2 - textWidth("Enviando mail...")/2, height/2 - 25); 
+  }else{
+    //  background(0);
+    imageMode(CENTER);
+    image(mosaicImg, centerX, centerY, imgW, imgH);
+    //  noTint();
+    //  if (textfieldShow) tint(255, 150);
 
-  if (animatingStatus) {
-    image(clickedImg, clickedImgX, clickedImgY, clickedImgW, clickedImgH);// old ok
+    if (animatingStatus) {
+      image(clickedImg, clickedImgX, clickedImgY, clickedImgW, clickedImgH);// old ok
 
-    // We animate the image to its final position
-    if (clickedImgX > width/2)  clickedImgX -= Math.sqrt(clickedImgX-(width/2) );
-    if (clickedImgY > height/2) clickedImgY -= Math.sqrt(clickedImgY-(height/2) );
-    
-    if (clickedImgX < width/2)  clickedImgX += Math.sqrt(clickedImgX+(width/2) );
-    if (clickedImgY < height/2) clickedImgY += Math.sqrt(clickedImgY+(height/2) );
-    
+      // We animate the image to its final position
+      if (clickedImgX > width/2)  clickedImgX -= Math.sqrt(clickedImgX-(width/2) );
+      if (clickedImgY > height/2) clickedImgY -= Math.sqrt(clickedImgY-(height/2) );
 
-    // We animate the image to its real size
-    if (clickedImg.width > clickedImgW)  clickedImgW += Math.sqrt(clickedImg.width - clickedImgW);
-    if (clickedImg.height > clickedImgH)  clickedImgH += Math.sqrt(clickedImg.height - clickedImgH);
+      if (clickedImgX < width/2)  clickedImgX += Math.sqrt(clickedImgX+(width/2) );
+      if (clickedImgY < height/2) clickedImgY += Math.sqrt(clickedImgY+(height/2) );
 
-    // if image is positioned and fully resized
-    if (clickedImgX == width/2 && clickedImgY == height/2 && clickedImgW == clickedImg.width
-      && clickedImgH == clickedImg.height) {
-      println("Animation finished");
-      coordenadasList.clear();  // Empty the ccoordenadasList
-      run(clickedImgPath);
+
+      // We animate the image to its real size
+      if (clickedImg.width > clickedImgW)  clickedImgW += Math.sqrt(clickedImg.width - clickedImgW);
+      if (clickedImg.height > clickedImgH)  clickedImgH += Math.sqrt(clickedImg.height - clickedImgH);
+
+      // if image is positioned and fully resized
+      if (clickedImgX == width/2 && clickedImgY == height/2 && clickedImgW == clickedImg.width
+        && clickedImgH == clickedImg.height) {
+        //    println("Animation finished");
+        coordenadasList.clear();  // Empty the ccoordenadasList
+        run(clickedImgPath);
+      }
     }
   }
-  //TODO
-  //if (cam.available() == true) {
-  // cam.read();
-  //   println(frameRate + " FPS");
-  //}
 }  // END draw()
+
 void mouseClicked() {
-  println(mouseX);
-  println(mouseY);
+  if (textfieldShow) return;
+  println("click mouseX: "+mouseX);
+  println("click mouseY: "+mouseY);
   clickedMouseX = mouseX;
   clickedMouseY = mouseY;
   if (mouseButton == LEFT) {
-    if (scale!=1) {
-      undoPanZoom();  // Undoing history steps
-      scale=1;
-    }
     // Search in coordinates list until it is found
     long startCliking = System.currentTimeMillis();
     for (int i = 0; i<coordenadasList.size(); i++) {
       Coordenada pos = coordenadasList.get(i);
-      if ((clickedMouseX > pos.x) && (clickedMouseX < pos.x + scl) 
-        && (clickedMouseY > pos.y) && (clickedMouseY < pos.y + scl)) {
-        //     println("pos.x: "+pos.x);
+      if ( (mouseX >= pos.x) && (mouseX <= pos.x + scl) 
+        && (mouseY >= pos.y) && (mouseY <= pos.y + scl) ) {
         clickedImg = pos.image; 
         clickedImgW = pos.image.width/scl;
         clickedImgH = pos.image.height/scl;
-        clickedImgX = pos.x;
-        clickedImgY = pos.y;
+        clickedImgX = int(pos.x);
+        clickedImgY = int(pos.y);
         clickedImgPath = pos.imagePath; 
         animatingStatus =true;
+        println("clickedImgX = pos.x: "+pos.x);
+        println("clickedImgY = pos.y: "+pos.y);
         break;
       }
     }
+ //   println("nada encontrado");
     long endCliking = System.currentTimeMillis();
     println("Clicking: " + (endCliking - startCliking) );
   }
 } // END mouseClicked()
 
 void keyPressed() {
+  labelMsg.hide();
   if (key =='z' || key == 'Z') {
     // if we have at least one camera we take a shot for the mosaic
     if (cameras.length !=0) loadNewImage();
+  } 
+  
+  if (key==ESC) {
+    key=0;  //Para que no se cierre con Escape
+    cp5.hide(); 
+    cp5.get(Textfield.class, "").clear();
+    textfieldShow = false;
   }
+  if (key== 7) { //control+g
+    //lastImageName = saveImage();
+    cp5.get(Textfield.class, "").clear();
+    labelMsg.hide();
+    textfieldShow = true;
+    cp5.show();
+  }
+}
+String saveImage() {
+  setTimestamp();
+  save("imagenes/pixelate_"+Time+".jpg");
+  return  "pixelate_"+Time+".jpg";
 }
 
-// Function to list all the files in a directory
-File[] listFiles(String dir) {
-  File file = new File(dir); //<>//
-  if (file.isDirectory()) {
-    File[] files = file.listFiles(); //<>//
-    return files; //<>//
-  } else {
-    // If it's not a directory
-    return null; //<>//
-  }
-}
 // Function to create the mosaic 
 void run(String path) {
   photo = loadImage(path);
@@ -274,11 +307,17 @@ void run(String path) {
       coordenadasList.add(new Coordenada((x*scl)+posX, (y*scl)+posY, imagenesList.get(colorId).originalImg, imagenesList.get(colorId).filename));
     }
   }
+  //println("inicio pos.x: "+ coordenadasList.get(0).x);
+  //println("inicio pos.y: "+ coordenadasList.get(0).y);
   long endCompositing = System.currentTimeMillis();
   println("DRAW: Compositing, Fill cols and rows: "+(endCompositing-startCompositing));
+  coordenadasListCopy = coordenadasList;
 
   animatingStatus = false; // In case the run comes from an animation
+  scale=1;
+  
 } // ENDS run()
+
 
 // Function to load the image taken from the webcam
 void loadNewImage() {
@@ -289,7 +328,7 @@ void loadNewImage() {
   //cam.stop();
   // Save the image
   setTimestamp();
-  lastImagePath = "data/" + photosDir + "/"+ Time +".png";
+  lastImagePath = "data/" + photosDir + "/"+ Time +".jpg";
   save(lastImagePath);
 
   // We change size of the mosaic image to that of the capture of the camera
@@ -320,163 +359,13 @@ void processAllImages() {
   long startTimeImagenArrayList = System.currentTimeMillis();
   // We create an empty ArrayList and fill it with images
   imagenesList = new ArrayList<Imagen>();
-  for (int i = 0; i < files.length-1; i++) { //<>//
+  for (int i = 0; i < files.length-1; i++) {
     imagenesList.add(new Imagen(files[i+1].toString()));
   }
   long endTimeImagenArrayList = System.currentTimeMillis();
   println("Imagen ArrayList: "+ (endTimeImagenArrayList-startTimeImagenArrayList));
-}
-
-//TODO
-// Undo the zoom & pan to get the coordinates equivalent to the mouseX and mouseY
-void undoPanZoom() {
-  for (int i = historyList.size() - 1; i >= 0; i--) { 
-    PasoHistory paso = historyList.get(i);
-    paso.undoPaso();
-    historyList.remove(i);
-  }
-}
-// Function to get the time and pass it to the Time variable
-void setTimestamp() {
-  String Year, Month, Day, Hour, Minute, Second, Millisecond;
-  Year = nf( year(), 4 );
-  Month = nf( month(), 2 );
-  Day = nf( day(), 2 );
-  Hour = nf( hour(), 2 );
-  Minute = nf( minute(), 2 );
-  Second = nf( second(), 2 );
-  Millisecond = nf( millis(), 4);
-  Time = Year + Month + Day + "_T" + Hour + Minute + Second + Millisecond ;
-}
-
-//ZOOM & PAN functions
-//Pan function
-void mousePressed() {
-  if (mouseButton == RIGHT) undoPanZoom();  // For debugging
-
-  if (mouseButton == LEFT) {
-    panFromX = mouseX;
-    panFromY = mouseY;
-  }
-}
-
-//Pan function continued..
-void mouseDragged() {
-  if (mouseButton == LEFT) {
-    panToX = mouseX;
-    panToY = mouseY;
-
-    xShift = panToX - panFromX;
-    yShift = panToY - panFromY;
-
-    //Only pan with the image occupies the whole display
-    if (centerX - imgW / 2 <= 0
-      && centerX + imgW / 2 >= width
-      && centerY - imgH / 2 <= 0
-      && centerY + imgH / 2 >= height) {
-      centerX = centerX + xShift;
-      centerY = centerY + yShift;
-    }
-
-    //Set the constraints for pan
-    if (centerX - imgW / 2 > 0) {
-      centerX = imgW / 2;
-    }
-
-    if (centerX + imgW / 2 < width) {
-      centerX = width - imgW / 2;
-    }
-
-    if (centerY - imgH / 2 > 0) {
-      centerY = imgH / 2;
-    }
-
-    if (centerY + imgH / 2 < height) {
-      centerY = height - imgH / 2;
-    }
-
-    panFromX = panToX;
-    panFromY = panToY;
-    historyList.add(new PasoHistory("pan", centerX, centerY));
-  }
-}
-
-//Zoom function
-void mouseWheel(MouseEvent event) {
-  float e = event.getCount();
-  //Zoom in
-  if (e == -1) {
-    println("IN");
-    if (scale < maxScale) {
-      scale++;
-      historyList.add(new PasoHistory("zoom-", centerX, centerY));   
-      imgW = int(imgW * (1+zoomFactor));
-      imgH = int(imgH * (1+zoomFactor));
-      historyList.add(new PasoHistory("pan", centerX, centerY));  
-
-      centerX = centerX - int(zoomFactor * (mouseX - centerX));
-      centerY = centerY - int(zoomFactor * (mouseY - centerY));
-      println();
-    }
-  }
-
-  //Zoom out
-  if (e == 1) {
-    println("OUT");
-    if (scale < 1) {
-      scale = 1;
-      imgW = photo.width;
-      imgH = photo.height;
-      println("scale = 1 ");
-    }
-
-    if (scale > 1) {
-      scale--;
-      historyList.add(new PasoHistory("zoom+", centerX, centerY));
-      imgH = int(imgH/(1+zoomFactor));
-      imgW = int(imgW/(1+zoomFactor));
-      centerX = centerX + int((mouseX - centerX)
-        * (zoomFactor/(zoomFactor + 1)));
-      centerY = centerY + int((mouseY - centerY)
-        * (zoomFactor/(zoomFactor + 1)));
-
-      if (centerX - imgW / 2 > 0) {
-        centerX = imgW / 2;
-      }
-
-      if (centerX + imgW / 2 < width) {
-        centerX = width - imgW / 2;
-      }
-
-      if (centerY - imgH / 2 > 0) {
-        centerY = imgH / 2;
-      }
-
-      if (centerY + imgH / 2 < height) {
-        centerY = height - imgH / 2;
-      }
-      //Centrado de la imagen cuando se vuelve a hacer pequeña
-      if ( width > imgW) {
-        println("width: "+width);
-        println("imgW: "+imgW);
-        println("centerX: "+centerX);
-        int padLeft = (width-imgW)/2;
-
-        println("padleft: "+padLeft);
-        centerX -= padLeft;
-        println("xxx");
-      }
-      if ( height > imgH) {
-        println("height: "+height);
-        println("imgH: "+imgH);
-        println("centerY: "+centerY);
-        int padTop = (height-imgH)/2;
-
-        println("padTop: "+padTop);
-        centerY -= padTop;
-        println("yyyy");
-      }
-      historyList.add(new PasoHistory("pan", centerX, centerY));
-    }
+  run(firstPhoto);
+  synchronized(this) {
+    imagesProcessed = true;
   }
 }

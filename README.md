@@ -4,13 +4,13 @@ Software para el procesado de imágenes fotográficas, a nivel de pixel, a fin d
 &nbsp;&nbsp;&nbsp;[AVFLOSS](http://medialab-prado.es/article/avfloss "Title") is a working group on Free/Libre audiovisuals in Medialab-Prado, Madrid. 
 
 
- ****
+ <hr />
 <ul>
  <li> <strong>Processing:</strong> pixelate.pde - Con captura de cámara, pan&zoom y envío de email con imagen.</li>
  <li> <strong>Processing:</strong> AlterPixel_01.pde - Imágenes de Flickr. Se actualizan cada <i>n</i> segundos.
     Sin captura de webcam ni pan&zoon.</li>
 </ul>
-****
+<hr />
 Últimos cambios:
 <ul>
  <li>mosaicoColor.pde evoluciona a pixelate.pde</li>

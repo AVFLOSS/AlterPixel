@@ -181,8 +181,8 @@ void mouseClicked() {
     long startCliking = System.currentTimeMillis();
     for (int i = 0; i<coordenadasList.size(); i++) {
       Coordenada pos = coordenadasList.get(i);
-      if ( (mouseX >= pos.x) && (mouseX <= pos.x + scl) 
-        && (mouseY >= pos.y) && (mouseY <= pos.y + scl) ) {
+      if ( (mouseX >= pos.x) && ( mouseX <= pos.x + (scl * pow(1+zoomFactor,scale-1)) )
+        && (mouseY >= pos.y) && ( mouseY <= pos.y + (scl * pow(1+zoomFactor,scale-1)) ) ) {
         clickedImg = pos.image; 
         clickedImgW = pos.image.width/scl;
         clickedImgH = pos.image.height/scl;

@@ -10,12 +10,6 @@
    - z = toma una foto de la webcam (si hay webcam)
    - Ctrl + g = abre un cuadro de texto para enviar la imagen por correo electrónico
 
-* Bugs:
-   - Cuando la imagen ha sido ampliada o desplazada, la coordenada mouseX y mouseY no coincide con la celda completa, sólo funciona la parte superior izquierda de la celda.
-
-
-
-
 
  ** A Processing sketch, to create continuous mosaics of color images **
 
@@ -30,6 +24,4 @@
   - z = it takes a photo of the webcam (if there is webcam)
   - Ctrl+g = it opens a text box to send the image by email
 
-* Bugs:
-  - When the image has been zoomed and/or panned the coordenate mouseX and mouseY does not match the full cell, only the top left of the cell works.
 

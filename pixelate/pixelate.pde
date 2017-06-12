@@ -1,12 +1,13 @@
-// Version 0.7 Beta //<>// //<>// //<>// //<>// //<>//
+// Version 0.7 Beta //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+// 12/06/2017
 // Based in Obamathon
 // https://github.com/ITPNYU/Obamathon
 // YouTube video tutorial: https://youtu.be/nnlAH1zDBDE
 
-// Zoom and pan from https://github.com/jinlong25/ProcessingMapZoomPan 
 
 import processing.video.*;
-import controlP5.*;
+import g4p_controls.*;
+import java.awt.Font;
 
 // USER OPTIONS
 // USER option: First photo to load
@@ -27,7 +28,7 @@ int surfaceH = 480;
 String photosDir = "photos";
 
 // User option: Size of the cells
-int scl = 16;
+int scl = 14;
 
 /* ****
  * There are no more user options below, but cheer ...
@@ -43,6 +44,8 @@ PImage smaller;
 
 // List of Imagen objects
 ArrayList<Imagen> imagenesList;
+// List of icons for the grid
+ArrayList<Icon> iconsList;
 
 String[] cameras; // Do we have any camera
 Capture cam;  // Variable for capture device
@@ -54,11 +57,13 @@ int pixelsLength;
 ArrayList<Coordenada> coordenadasList; // 
 ArrayList<Coordenada> coordenadasListCopy; // 
 
+int compIndex = 0;
+boolean isComposited = false;
 PImage clickedImg;
 int clickedImgX, clickedImgY;
 int clickedImgW, clickedImgH;
 String clickedImgPath;
-boolean animatingStatus = false;
+boolean isAnimating = false;
 
 // The x and y positions calculate offsets if any (mainly vertical photos)
 int posX, posY = 0;
@@ -69,13 +74,15 @@ File[] files;
 /**
  ** Text field
  **/
-ControlP5 cp5;
+GTextField mailField;
+GLabel lblMail, lblError;
 boolean textfieldShow = false;
 String lastImageName;
 String lastEmail;
-Textlabel emailLabel;
-Textlabel msgLabel;
-Label labelMsg;
+
+
+String mailStatus = "   Preparing e-mail...";
+
 boolean imagesProcessed = false;
 boolean sendingMail = false;
 
@@ -110,17 +117,20 @@ int panToY;
 int xShift = 0;
 int yShift = 0;
 
+
 void settings() {
   size(surfaceW, surfaceH, P2D);
+  //¿Habemus cámaras?
+  cameras = Capture.list();
 }
 void setup() {
-  frameRate(fps);
-  //Check to see if there is a webcam
-  cameras = Capture.list();
+  frameRate(30);
+  // Check to see if there is a webcam
   if (cameras.length != 0) {
     cam = new Capture(this, camW, camH, fps);
-    cam.start();
+   // cam.start();
   }
+  iconsList = new ArrayList<Icon>();
   coordenadasList = new ArrayList<Coordenada>();
   setTextField();  //in functions
   thread("processAllImages");
@@ -132,19 +142,37 @@ synchronized void draw() {
   if (!imagesProcessed) {
     textSize(50);
     fill(255);
-    text("Loading...", width/2 - textWidth("Loading...")/2, height/2 - 25);
-  } else if(sendingMail){
+    text("Cargando...", width/2 - textWidth("Loading...")/2, height/2 - 25);
+  } else if (sendingMail) {//sendingMail
     textSize(50);
     fill(255);
-    text("Enviando mail...", width/2 - textWidth("Enviando mail...")/2, height/2 - 25); 
-  }else{
+    text(mailStatus, (width/2 - textWidth("Enviando mail..."))+50, height/2 - 25);
+ //   textSize(20);
+ //   text("E-mail enviado.", width/2 - textWidth("Enviando mail..."), height/2 );
+    
+  } else {
     //  background(0);
     imageMode(CENTER);
-    image(mosaicImg, centerX, centerY, imgW, imgH);
+    //image(mosaicImg, centerX, centerY, imgW, imgH);
+    image(photo, centerX, centerY, imgW, imgH);
+
     //  noTint();
     //  if (textfieldShow) tint(255, 150);
+    if(!isComposited){
+      int speed = photo.width / 70;
+      for (int i = 0; i< speed; i++) {
+        if ( compIndex < iconsList.size() ) {
+          //    photo.set( iconsList.get(compIndex).sclX, iconsList.get(compIndex).sclY, iconsList.get(compIndex).icon);
+          photo.copy(iconsList.get(compIndex).icon, 0, 0, scl, scl, iconsList.get(compIndex).sclX, iconsList.get(compIndex).sclY, scl, scl );
+          compIndex++;
+        } else {
+          isComposited = true;
+          println();
+        }
+      }
+    }
 
-    if (animatingStatus) {
+    if (isAnimating) {
       image(clickedImg, clickedImgX, clickedImgY, clickedImgW, clickedImgH);// old ok
 
       // We animate the image to its final position
@@ -171,7 +199,10 @@ synchronized void draw() {
 }  // END draw()
 
 void mouseClicked() {
-  if (textfieldShow) return;
+  if (isAnimating) return;
+  if (!isComposited) return;
+  println("iconsList.size(): "+iconsList.size()); //<>//
+  if (textfieldShow) return; //<>//
   println("click mouseX: "+mouseX);
   println("click mouseY: "+mouseY);
   clickedMouseX = mouseX;
@@ -181,45 +212,65 @@ void mouseClicked() {
     long startCliking = System.currentTimeMillis();
     for (int i = 0; i<coordenadasList.size(); i++) {
       Coordenada pos = coordenadasList.get(i);
-      if ( (mouseX >= pos.x) && ( mouseX <= pos.x + (scl * pow(1+zoomFactor,scale-1)) )
-        && (mouseY >= pos.y) && ( mouseY <= pos.y + (scl * pow(1+zoomFactor,scale-1)) ) ) {
+      if ( (mouseX >= pos.x) && ( mouseX <= pos.x + (scl * pow(1+zoomFactor, scale-1)) )
+        && (mouseY >= pos.y) && ( mouseY <= pos.y + (scl * pow(1+zoomFactor, scale-1)) ) ) {
         clickedImg = pos.image; 
         clickedImgW = pos.image.width/scl;
         clickedImgH = pos.image.height/scl;
         clickedImgX = int(pos.x);
         clickedImgY = int(pos.y);
         clickedImgPath = pos.imagePath; 
-        animatingStatus =true;
+        isAnimating =true;
         println("clickedImgX = pos.x: "+pos.x);
         println("clickedImgY = pos.y: "+pos.y);
         break;
       }
     }
- //   println("nada encontrado");
+    //   println("nada encontrado");
     long endCliking = System.currentTimeMillis();
     println("Clicking: " + (endCliking - startCliking) );
   }
 } // END mouseClicked()
 
 void keyPressed() {
-  labelMsg.hide();
+  if (isAnimating) return;
+  if (!isComposited) return;
+  lblError.setVisible(false);
   if (key =='z' || key == 'Z') {
     // if we have at least one camera we take a shot for the mosaic
-    if (cameras.length !=0) loadNewImage();
+    
+    if (cameras.length !=0){
+      cam.start();
+      loadNewImage();
+      cam.stop();
+    }
+    //loadNewImage();
   } 
-  
+
   if (key==ESC) {
     key=0;  //Para que no se cierre con Escape
-    cp5.hide(); 
-    cp5.get(Textfield.class, "").clear();
-    textfieldShow = false;
+    mailField.setText("");
+    mailField.setVisible(false);
+    lblMail.setVisible(false);
+    lblError.setVisible(false);
   }
   if (key== 7) { //control+g
-    //lastImageName = saveImage();
-    cp5.get(Textfield.class, "").clear();
-    labelMsg.hide();
-    textfieldShow = true;
-    cp5.show();
+    if (isAnimating) return;
+    if (!isComposited) return;
+    mailField.setVisible(true);
+    delay(100);
+    mailField.setFocus(true);
+    lblMail.setVisible(true);
+  }
+
+  if (key==ENTER) {
+    if (mailField.getText().replaceAll("[\u0000-\u001f]", "").trim() != "") { 
+      String email = mailField.getText();
+      email= email.replaceAll("[\u0000-\u001f]", ""); //remove control characters
+
+      procesaMail(email);
+      println("Mail es: " + email);
+    }
   }
 }
 String saveImage() {
@@ -230,6 +281,8 @@ String saveImage() {
 
 // Function to create the mosaic 
 void run(String path) {
+  isComposited = false;
+  compIndex = 0;
   photo = loadImage(path);
   // If there are larger images, we reduce them
   if ( photo.width > width || photo.height > height ) {
@@ -240,6 +293,8 @@ void run(String path) {
       photo.resize(0, height);  // is is portrait (vertical)
     }
   }
+  // ajustamos el tamaño de photo al tamaño final del mosaico para que encaje.
+  photo = photo.get(0, 0, (photo.width/scl)*scl, (photo.height/scl)*scl);
 
 
   // ZOOM & PAN
@@ -262,6 +317,8 @@ void run(String path) {
 
   smaller = createImage(w, h, RGB);
   smaller.copy(photo, 0, 0, photo.width, photo.height, 0, 0, w, h);
+  ArrayList<Icon> tmpIconsList = new ArrayList <Icon>();
+
 
   long startCompositing = System.currentTimeMillis();
   smaller.loadPixels();
@@ -289,7 +346,7 @@ void run(String path) {
         int g = img.g;
         int b = img.b;
         // We compare euclidean distance https://en.wikipedia.org/wiki/Color_difference 
-        distColor = Math.sqrt(Math.pow(targetR-r, 2) + Math.pow(targetG-g, 2) + Math.pow(targetB-b, 2));
+        distColor = Math.sqrt( Math.pow(targetR-r, 2) + Math.pow(targetG-g, 2) + Math.pow(targetB-b, 2) );
         if (minDist > distColor ) {
           colorId = listIndex;
           minDist = distColor;
@@ -299,6 +356,7 @@ void run(String path) {
 
       // noStroke();
       //  rect((x*scl)+posX, (y*scl)+posY, scl, scl);
+      tmpIconsList.add( new Icon(x*scl, y*scl, imagenesList.get(colorId).smallerImg));
 
       // Creating the mosaic    
       mosaicImg.set( x*scl, y*scl, imagenesList.get(colorId).smallerImg);
@@ -312,10 +370,12 @@ void run(String path) {
   long endCompositing = System.currentTimeMillis();
   println("DRAW: Compositing, Fill cols and rows: "+(endCompositing-startCompositing));
   coordenadasListCopy = coordenadasList;
+  iconsList = tmpIconsList;
 
-  animatingStatus = false; // In case the run comes from an animation
+
+
+  isAnimating = false; // In case the run comes from an animation
   scale=1;
-  
 } // ENDS run()
 
 

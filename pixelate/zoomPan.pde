@@ -1,3 +1,4 @@
+// Zoom and pan from https://github.com/jinlong25/ProcessingMapZoomPan 
 
 //ZOOM & PAN functions
 //Pan function
@@ -15,7 +16,7 @@ void mouseDragged() {
   if (mouseButton == LEFT) {
     panToX = mouseX;
     panToY = mouseY;
-
+    if(scale==1) return;
     xShift = panToX - panFromX;
     yShift = panToY - panFromY;
 
@@ -67,7 +68,7 @@ void mouseWheel(MouseEvent event) {
   //Zoom in
   if (e == -1) {
     println("IN");
-    if (scale < maxScale) { //<>//
+    if (scale < maxScale) {
       scale++;
       imgW = int(imgW * (1+zoomFactor));
       imgH = int(imgH * (1+zoomFactor));
@@ -80,11 +81,11 @@ void mouseWheel(MouseEvent event) {
       }
       println();
     }
-    println("0 coord.x: "+coordenadasList.get(0).x); //<>//
+    println("0 coord.x: "+coordenadasList.get(0).x);
     println("0 coord.y: "+coordenadasList.get(0).y);
     println("1 coord.x: "+coordenadasList.get(1).x);
     println("1 coord.y: "+coordenadasList.get(1).y);
-    println("scale: "+scale); //<>//
+    println("scale: "+scale);
   }
 
   //Zoom out
@@ -104,8 +105,8 @@ void mouseWheel(MouseEvent event) {
 
     if (scale > 1) {
       scale--;
-      imgH = ceil(imgH/(1+zoomFactor));
-      imgW = ceil(imgW/(1+zoomFactor));
+      imgH = int(imgH/(1+zoomFactor));
+      imgW = int(imgW/(1+zoomFactor));
       centerX = centerX + int((mouseX - centerX) * (zoomFactor/(zoomFactor + 1)));
       centerY = centerY + int((mouseY - centerY) * (zoomFactor/(zoomFactor + 1)));
 

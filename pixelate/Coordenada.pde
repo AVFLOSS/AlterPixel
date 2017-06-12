@@ -24,10 +24,11 @@ class Coordenada {
   void adjustZoomIn() {
     this.x = (this.x-mouseX)*(1+zoomFactor) + mouseX;  
     this.y = (this.y-mouseY)*(1+zoomFactor) + mouseY;
-  }
+  } //<>//
   void adjustZoomOut(int _offsetX, int _offsetY) {
     this.x = this.x + (mouseX - this.x) * (zoomFactor/(zoomFactor + 1));
     this.y = this.y + (mouseY - this.y) * (zoomFactor/(zoomFactor + 1));
+    
     //constraints
     if (_offsetX != 0) {
       this.x = this.x + _offsetX;

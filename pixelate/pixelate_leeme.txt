@@ -1,7 +1,21 @@
 ** Un sketch de Processing, para crear mosaicos continuos de imágenes en color **
 
-1.- Descomprimir imágenes data/photos/photos.zip en data/photos
-2.- Eliminar photos.zip una vez extraidas las imágenes
+* SETUP:
+1.- Descomprimir imágenes data/photos.zip en data/
+    Esto creará el directorio photos con las imágenes
+
+2.- En el archivo pixelate.pde (la pestaña pixelate):
+        Linea 18 -> poner unos fps que te permita la cámara.
+	En linux, para ver las resoluciones y fps de la webcam, ejecuta:
+		`v4l2-ctl --list-formats-ext`        
+
+3.- En el archivo Auth.pde (la pestaña Auth):
+	Lineas 15 y 16 -> Cambiar YOUR_USER_NAME y YOUR_PASSWORD por tu nombre de usuario y contraseña de la cuenta de correo.
+
+4.- En el archivo MailStuff.pde (la pestaña MailStuff):
+	Lineas 8, 9 y 10 -> Cambiar YOURNAME@EXAMPLE.COM, YOURNAME y YOUR_SMTP_HOST por tu email, tu nombre y la dirección smtp del servidor de correo.
+
+NOTA: Los pasos 3 y 4 solo son necesarios para enviar una imagen por email.
 
 * Instrucciones:
    - Clic izquierdo = cambia de imagen
@@ -10,11 +24,32 @@
    - z = toma una foto de la webcam (si hay webcam)
    - Ctrl + g = abre un cuadro de texto para enviar la imagen por correo electrónico
 
+* Bugs conocidos:
+   - El campo de texto no funcionan las teclas retroceso o borrar.
+     (https://github.com/processing/processing/issues/4654)
+
+
+--------------------------------------------------------------------------------------
+
 
  ** A Processing sketch, to create continuous mosaics of color images **
+* SETUP:
+1.- Unzip data/photos.zip images in data/
+    This will create the directory photos with the images
 
-1.- Unzip data/photos/photos.zip images in data/photos
-2.- Remove photos.zip once the images have been extracted
+2.- In the file pixelate.pde (the tab pixelate):
+	Line 18 -> put the fps of your webcam.
+	You can see your cam capture options in GNULinux with the command:
+		`v4l2-ctl --list-formats-ext`
+
+
+3.- In the file Auth.pde (the tab Auth):
+	Lines 15 and 16 -> Change YOUR_USER_NAME and YOUR_PASSWORD for your user name and password of the mail account.
+
+4.- In the file MailStuff.pde (the tab MailStuff):
+	Lines 8, 9 and 10 -> Change YOURNAME@EXAMPLE.COM, YOURNAME and YOUR_SMTP_HOST for your email, your name and the smtp mail server address.
+
+NOTE: The stepts 3 and 4 are only necessary if you are going to send an image by email.
 
 * Instructions:
   - Left click = it changes image
@@ -24,4 +59,7 @@
   - z = it takes a photo of the webcam (if there is webcam)
   - Ctrl+g = it opens a text box to send the image by email
 
+* Known bugs:
+  - The keys backspace or delete don't work
+    (https://github.com/processing/processing/issues/4654)
 

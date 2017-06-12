@@ -11,7 +11,6 @@ void setTimestamp() {
   Time = Year + Month + Day + "_T" + Hour + Minute + Second + Millisecond ;
 }
 
-
 // Function to list all the files in a directory
 File[] listFiles(String dir) {
   File file = new File(dir);
@@ -23,88 +22,45 @@ File[] listFiles(String dir) {
     return null;
   }
 }
+// sets the text field for the mail
 void setTextField() {
-  PFont font = createFont("arial", 20);
-  cp5 = new ControlP5(this);
-  Textfield t = cp5.addTextfield("")
-    .setPosition(width/2-100, 200)
-    .setSize(200, 40)
-    .setFont(createFont("arial", 20))
-    .setAutoClear(false)
-    .keepFocus(true)
-    ;
-    //Dummy text field to use its label
-  Textfield m = cp5.addTextfield("m")
-    .setPosition(0-width/2, 250)
-    .setSize(200, 40)
-    .setFont(createFont("arial", 20))
-    .setAutoClear(false)
-    .keepFocus(false)
- //   .hide()
-    ;
-    
-  Label labelEmail = t.getCaptionLabel();
-  labelEmail.setColor(color(255,250,0));
-  labelEmail.setFont(createFont("Georgia",35));
-  labelEmail.toUpperCase(false);
-  labelEmail.setText(" E-mail:  ");
-  labelEmail.align(ControlP5.LEFT, ControlP5.TOP_OUTSIDE);
-  labelEmail.setColorBackground(color(0,55,255,200));
-  labelEmail.getStyle().setPaddingRight(47);
-  
-  //msgLabel = cp5.addTextlabel("msg")
-  //   .setText("Mail no válido")
-  //   .setPosition((width/2)-100,240)
-  //   .setColorValue(0xffff0000)
-  //   .setFont(createFont("Georgia Bold",35))
-  //   .setColorBackground(0xff000000)
-  //   ; 
+  mailField = new GTextField(this, (width/2)-100, height/2 -10, 200, 35);
+  mailField.setFont(new Font("Georgia", Font.PLAIN, 25));
+  mailField.setVisible(false);
 
-  //Label labelMsg = m.getCaptionLabel();
-  labelMsg = m.getCaptionLabel();
-  labelMsg.setColor(color(255,250,0));
-  labelMsg.setFont(createFont("Georgia",35));
-  labelMsg.toUpperCase(false);
-  labelMsg.setText(" Mail no válido ");
-  labelMsg.align(ControlP5.RIGHT+width,240);
-  labelMsg.setColorBackground(color(255,55,0,200));
-  labelMsg.getStyle().setPaddingRight(-5);
-  labelMsg.getStyle().setMarginLeft(width-100);
-  labelMsg.hide();
+  lblMail = new GLabel(this, mailField.getX(), mailField.getY()-50, 200, 18);
+  lblMail.setFont(new Font("Georgia", Font.PLAIN, 35));
+  lblMail.setAlpha(190);
+  lblMail.setTextAlign(GAlign.LEFT, null);
+  lblMail.setOpaque(true);
+  lblMail.setText("E-mail");
+  lblMail.resizeToFit(false, true);
+  lblMail.setVisible(false);
 
- 
-  cp5.hide();
- // msgLabel.hide();
-  textFont(font);
+  lblError = new GLabel(this, mailField.getX()-25, mailField.getY()+50, 250, 18);
+  lblError.setFont(new Font("Georgia", Font.PLAIN, 25));
+  lblError.setAlpha(190);
+  lblError.setTextAlign(GAlign.LEFT, null);
+  lblError.setOpaque(true);
+  lblError.setText("E-mail no es válido");
+  lblError.resizeToFit(false, true);
+  lblError.setLocalColorScheme(G4P.RED_SCHEME);
+  lblError.setVisible(false);
 }
 
-void controlEvent(ControlEvent theEvent) {
-  if (theEvent.isAssignableFrom(Textfield.class)) {
-
-    println("controlEvent: accessing a string from controller '"
-      +theEvent.getName()+"': "
-      +theEvent.getStringValue()
-      );
-    //ENTER has been pressed
-
-
-    String email = theEvent.getStringValue();
-    email= email.replaceAll("[\u0000-\u001f]", ""); //remove control characters
-    if (isValidEmailAddress(email)) {
-      cp5.hide(); 
-      cp5.get(Textfield.class, "").clear(); 
-    
-      lastImageName = saveImage();
-      lastEmail = email;
-      sendingMail = true;
-      thread("sendMail");
-    } else {
-//   println("no es válido: "+email);
-   labelMsg.show();
-   //msgLabel.setText("Mail no válido");
-   //msgLabel.show();
-   //  cp5.addTextfield("No vale el email");
-    }
+void procesaMail(String _mail) {
+  String email = _mail;
+  if (isValidEmailAddress(email)) {
+    mailField.setText("");
+    mailField.dispose();
+    lblMail.dispose();
+    lastImageName = saveImage();
+    lastEmail = email;
+    sendingMail = true;
+    thread("sendMail");
+  } else {
+     println("no es válido: "+email);
+    lblError.setVisible(true);
   }
 }
 
